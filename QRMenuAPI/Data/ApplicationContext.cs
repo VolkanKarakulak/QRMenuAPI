@@ -36,10 +36,8 @@ namespace QRMenuAPI.Data
      
             modelBuilder.Entity<RestaurantUser>().HasKey(r => new { r.UserId, r.RestaurantId });
 
-            base.OnModelCreating(modelBuilder);
+            
         }
-
-        
 
     }
 }

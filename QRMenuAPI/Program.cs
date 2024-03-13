@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using QRMenuAPI.Data;
 using QRMenuAPI.Models;
@@ -40,6 +41,18 @@ public class Program
         app.MapControllers();
 
         app.Run();
+
+
+        ApplicationContext? context = app.Services.CreateScope().ServiceProvider.GetService<ApplicationContext>();
+        if (context != null)
+        {
+            context.Database.Migrate();
+            if (context.States.Count()==0)
+            {
+                State = new State()
+            }
+            RoleManager<IdentityRole>? roleManager = app.Services.CreateScope().ServiceProvider.GetService<RoleManager<IdentityRole>>();
+        }
     }
 }
 

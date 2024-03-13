@@ -23,6 +23,7 @@ namespace QRMenuAPI.Controllers
         }
 
         // GET: api/Companies
+        [Authorize(Roles = "Administratör")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Company>>> GetCompanies()
         {
@@ -35,6 +36,7 @@ namespace QRMenuAPI.Controllers
 
         // GET: api/Companies/5
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult<Company>> GetCompany(int id)
         {
           if (_context.Companies == null)
@@ -54,6 +56,7 @@ namespace QRMenuAPI.Controllers
         // PUT: api/Companies/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
+        [Authorize(Roles = "CompanyAdminstratör")]
         public async Task<IActionResult> PutCompany(int id, Company company)
         {
             if (id != company.Id)
@@ -81,7 +84,7 @@ namespace QRMenuAPI.Controllers
 
             return NoContent();
         }
-        [Authorize]
+        [Authorize(Roles = "Adminstratör")]
         // POST: api/Companies
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
@@ -99,6 +102,7 @@ namespace QRMenuAPI.Controllers
 
         // DELETE: api/Companies/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "CompanyAdminstratör, Adminstratör")]
         public async Task<IActionResult> DeleteCompany(int id)
         {
             if (_context.Companies == null)

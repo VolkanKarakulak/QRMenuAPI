@@ -9,134 +9,94 @@ using QRMenuAPI.Data;
 using QRMenuAPI.Models;
 using Microsoft.AspNetCore.Identity;
 
-
 namespace QRMenuAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly ApplicationContext _context;
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public UsersController(ApplicationContext context, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+        public UsersController(SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole> roleManager)
         {
-            _context = context;
-            _userManager = userManager;
             _signInManager = signInManager;
+            _roleManager = roleManager;
         }
 
-        // GET: api/Users
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ApplicationUser>>> GetUsers()
+        public ActionResult<List<ApplicationUser>> GetUsers()
         {
-            if (_context.Users == null)
-            {
-                return NotFound();
-            }
-            return await _userManager.Users.ToListAsync();
+            return _signInManager.UserManager.Users.ToList();
         }
 
-        // GET: api/Users/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<ApplicationUser>> GetApplicationUser(string id)
+        public ActionResult<ApplicationUser> GetApplicationUser(string id)
         {
-            var applicationUser = await _signInManager.UserManager.FindByIdAsync(id);
+            ApplicationUser applicationUser = _signInManager.UserManager.FindByIdAsync(id).Result;
 
             if (applicationUser == null)
             {
                 return NotFound();
             }
-
             return applicationUser;
         }
 
-        // PUT: api/Users/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public ActionResult PutApplicationUser(string id, ApplicationUser applicationUser)/*, string? passWord = null, string? currentPassWord=null*/
+        public OkResult PutApplicationUser(ApplicationUser applicationUser)
         {
-
-            var existingApplicationUser = _signInManager.UserManager.FindByIdAsync(id).Result;
+            ApplicationUser existingApplicationUser = _signInManager.UserManager.FindByIdAsync(applicationUser.Id).Result;
 
             existingApplicationUser.Email = applicationUser.Email;
             existingApplicationUser.Name = applicationUser.Name;
             existingApplicationUser.PhoneNumber = applicationUser.PhoneNumber;
             existingApplicationUser.StateId = applicationUser.StateId;
-
-            _userManager.UpdateAsync(existingApplicationUser).Wait();
-
-            /*if(passWord!= null)
-            {
-
-                IdentityResult identityResult = _userManager.ChangePasswordAsync(existingApplicationUser, currentPassWord, passWord).Result;
-            }*/
-            return NoContent();
+            existingApplicationUser.UserName = applicationUser.UserName;
+            _signInManager.UserManager.UpdateAsync(existingApplicationUser);
+            return Ok();
         }
 
-        // POST: api/Users
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<ApplicationUser>> PostApplicationUser(ApplicationUser applicationUser, string passWord)
+        public string PostApplicationUser(ApplicationUser applicationUser, string passWord)
         {
-            await _userManager.CreateAsync(applicationUser, passWord);
-
-            return CreatedAtAction("GetApplicationUser", new { id = applicationUser.Id }, applicationUser);
+            _signInManager.UserManager.CreateAsync(applicationUser, passWord).Wait();
+            return applicationUser.Id;
         }
 
-        // DELETE: api/Users/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteApplicationUser(string id)
+        public ActionResult DeleteApplicationUser(string id)
         {
+            ApplicationUser applicationUser = _signInManager.UserManager.FindByIdAsync(id).Result;
 
-            var applicationUser = await _signInManager.UserManager.FindByIdAsync(id);
-
-         
             if (applicationUser == null)
             {
                 return NotFound();
             }
-
-            applicationUser.StateId = 0; //passive alıyoruz
-            _context.Users.Remove(applicationUser);
-            await _userManager.UpdateAsync(applicationUser);
-
-            return NoContent();
+            applicationUser.StateId = 0;
+            _signInManager.UserManager.UpdateAsync(applicationUser);
+            return Ok();
         }
-
-        private bool ApplicationUserExists(string id)
-        {
-            return (_context.Users?.Any(e => e.Id == id)).GetValueOrDefault();
-        }
-
 
         [HttpPost("LogIn")]
         public bool LogIn(string userName, string passWord)
         {
-
-
             Microsoft.AspNetCore.Identity.SignInResult signInResult;
-     
+            ApplicationUser applicationUser = _signInManager.UserManager.FindByNameAsync(userName).Result;
 
-            ApplicationUser? applicationUser = _signInManager.UserManager.FindByNameAsync(userName).Result;
             if (applicationUser == null)
             {
                 return false;
             }
             signInResult = _signInManager.PasswordSignInAsync(applicationUser, passWord, false, false).Result;
-                
             return signInResult.Succeeded;
-            
-
         }
 
-        [HttpPost("ResetPassWord")]
-        public void ResetPassWord(string userName, string passWord)
+        [HttpPost("ReSetPassWord")]
+        public void ReSetPassWord(string userName, string passWord)
         {
             ApplicationUser applicationUser = _signInManager.UserManager.FindByNameAsync(userName).Result;
 
-            if(applicationUser == null)
+            if (applicationUser == null)
             {
                 return;
             }
@@ -144,34 +104,42 @@ namespace QRMenuAPI.Controllers
             _signInManager.UserManager.AddPasswordAsync(applicationUser, passWord);
         }
 
-        [HttpPost("PassWordReset")]
-        public string? PasswordReset(string userName)
+        [HttpPost("PassWordReSet")]
+        public string? PassWordReSet(string userName)
         {
             ApplicationUser applicationUser = _signInManager.UserManager.FindByNameAsync(userName).Result;
-            if (User == null)
+
+            if (applicationUser == null)
             {
-                return null;//Kullanıcı Yok
+                return null;
             }
             return _signInManager.UserManager.GeneratePasswordResetTokenAsync(applicationUser).Result;
         }
 
-
-        [HttpPost("ValideToken")]
-        public ActionResult<string> ValidateResetPassword(string UserName, string token, string newPassword)
+        [HttpPost("ValidateToken")]
+        public ActionResult<string?> ValidateToken(string userName, string token, string newPassWord)
         {
-            ApplicationUser applicationUser = _signInManager.UserManager.FindByNameAsync(UserName).Result;
-            if (User == null)
-            {
-                return NotFound();//Kullanıcı Yok
-            }
-            IdentityResult identityResult = _signInManager.UserManager.ResetPasswordAsync(applicationUser, token, newPassword).Result;
+            ApplicationUser applicationUser = _signInManager.UserManager.FindByNameAsync(userName).Result;
 
-            if (!identityResult.Succeeded)
+            if (applicationUser == null)
+            {
+                return NotFound();
+            }
+            IdentityResult identityResult = _signInManager.UserManager.ResetPasswordAsync(applicationUser, token, newPassWord).Result;
+            if (identityResult.Succeeded == false)
             {
                 return identityResult.Errors.First().Description;
             }
-            return Ok("Password Reset Successfull");
+            return Ok();
+        }
+
+        [HttpPost("AssignRole")]
+        public void AssignRole(string userId, string roleId)
+        {
+            ApplicationUser applicationUser = _signInManager.UserManager.FindByIdAsync(userId).Result;
+            IdentityRole identityRole = _roleManager.FindByIdAsync(roleId).Result;
+
+            _signInManager.UserManager.AddToRoleAsync(applicationUser, identityRole.Name).Wait();
         }
     }
-
 }
