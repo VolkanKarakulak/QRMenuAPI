@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QRMenuAPI.Data;
 using QRMenuAPI.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace QRMenuAPI.Controllers
 {
@@ -14,125 +15,106 @@ namespace QRMenuAPI.Controllers
     [ApiController]
     public class RolesController : ControllerBase
     {
-        private readonly ApplicationContext _context;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public RolesController(ApplicationContext context)
+        public RolesController(RoleManager<IdentityRole> roleManager)
         {
-            _context = context;
+            _roleManager = roleManager;
         }
 
-        // GET: api/Roles
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<ApplicationRole>>> GetApplicationRole()
-        {
-          if (_context.ApplicationRole == null)
-          {
-              return NotFound();
-          }
-            return await _context.ApplicationRole.ToListAsync();
-        }
+        //// GET: api/Roles
+        //[HttpGet]
+        //public async Task<ActionResult<IEnumerable<ApplicationRole>>> GetApplicationRole()
+        //{
+        //  if (_context.ApplicationRole == null)
+        //  {
+        //      return NotFound();
+        //  }
+        //    return await _context.ApplicationRole.ToListAsync();
+        //}
 
-        // GET: api/Roles/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ApplicationRole>> GetApplicationRole(string id)
-        {
-          if (_context.ApplicationRole == null)
-          {
-              return NotFound();
-          }
-            var applicationRole = await _context.ApplicationRole.FindAsync(id);
+        //// GET: api/Roles/5
+        //[HttpGet("{id}")]
+        //public async Task<ActionResult<ApplicationRole>> GetApplicationRole(string id)
+        //{
+        //  if (_context.ApplicationRole == null)
+        //  {
+        //      return NotFound();
+        //  }
+        //    var applicationRole = await _context.ApplicationRole.FindAsync(id);
 
-            if (applicationRole == null)
-            {
-                return NotFound();
-            }
+        //    if (applicationRole == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            return applicationRole;
-        }
+        //    return applicationRole;
+        //}
 
-        // PUT: api/Roles/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutApplicationRole(string id, ApplicationRole applicationRole)
-        {
-            if (id != applicationRole.Id)
-            {
-                return BadRequest();
-            }
+        //// PUT: api/Roles/5
+        //// To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        //[HttpPut("{id}")]
+        //public async Task<IActionResult> PutApplicationRole(string id, ApplicationRole applicationRole)
+        //{
+        //    if (id != applicationRole.Id)
+        //    {
+        //        return BadRequest();
+        //    }
 
-            _context.Entry(applicationRole).State = EntityState.Modified;
+        //    _context.Entry(applicationRole).State = EntityState.Modified;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ApplicationRoleExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+        //    try
+        //    {
+        //        await _context.SaveChangesAsync();
+        //    }
+        //    catch (DbUpdateConcurrencyException)
+        //    {
+        //        if (!ApplicationRoleExists(id))
+        //        {
+        //            return NotFound();
+        //        }
+        //        else
+        //        {
+        //            throw;
+        //        }
+        //    }
 
-            return NoContent();
-        }
+        //    return NoContent();
+        //}
 
         // POST: api/Roles
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<ApplicationRole>> PostApplicationRole(ApplicationRole applicationRole)
+        public void PostApplicationRole(string name)
         {
-          if (_context.ApplicationRole == null)
-          {
-              return Problem("Entity set 'ApplicationContext.ApplicationRole'  is null.");
-          }
-            _context.ApplicationRole.Add(applicationRole);
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (ApplicationRoleExists(applicationRole.Id))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
-            }
 
-            return CreatedAtAction("GetApplicationRole", new { id = applicationRole.Id }, applicationRole);
+            IdentityRole applicationRole = new IdentityRole(name);
+            _roleManager.CreateAsync(applicationRole).Wait();
         }
 
-        // DELETE: api/Roles/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteApplicationRole(string id)
-        {
-            if (_context.ApplicationRole == null)
-            {
-                return NotFound();
-            }
-            var applicationRole = await _context.ApplicationRole.FindAsync(id);
-            if (applicationRole == null)
-            {
-                return NotFound();
-            }
+        //// DELETE: api/Roles/5
+        //[HttpDelete("{id}")]
+        //public async Task<IActionResult> DeleteApplicationRole(string id)
+        //{
+        //    if (_context.ApplicationRole == null)
+        //    {
+        //        return NotFound();
+        //    }
+        //    var applicationRole = await _context.ApplicationRole.FindAsync(id);
+        //    if (applicationRole == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            _context.ApplicationRole.Remove(applicationRole);
-            await _context.SaveChangesAsync();
+        //    _context.ApplicationRole.Remove(applicationRole);
+        //    await _context.SaveChangesAsync();
 
-            return NoContent();
-        }
+        //    return NoContent();
+        //}
 
-        private bool ApplicationRoleExists(string id)
-        {
-            return (_context.ApplicationRole?.Any(e => e.Id == id)).GetValueOrDefault();
-        }
+        //private bool ApplicationRoleExists(string id)
+        //{
+        //    return (_context.ApplicationRole?.Any(e => e.Id == id)).GetValueOrDefault();
+        //}
     }
 }
